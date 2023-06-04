@@ -1,7 +1,7 @@
 const fs = require("fs");
 const { matchResults, deliveryResults } = require("./readingMatchesCSV");
 
-const player = "V Kohli";
+// const player = "V Kohli";
 
 const getResult = async () => {
   const deliveryData = await deliveryResults;
@@ -19,17 +19,21 @@ const getResult = async () => {
   // console.log(filteredMatchesBySeason);
   const runs_deliveries_by_season = deliveryData.reduce((acc, delivery) => {
     const { match_id, batsman, batsman_runs } = delivery;
-    if (player === batsman) {
-      for (let season in filteredMatchesBySeason) {
-        if (filteredMatchesBySeason[season].includes(match_id)) {
-          if (!acc[season]) {
-            acc[season] = {};
-            acc[season]["runs_scored"] = 0;
-            acc[season]["deliveries_faced"] = 0;
-          }
-          acc[season]["runs_scored"] += parseInt(batsman_runs);
-          acc[season]["deliveries_faced"] += 1;
+    for (let season in filteredMatchesBySeason) {
+      if (filteredMatchesBySeason[season].includes(match_id)) {
+        if (!acc[season]) {
+          acc[season] = {};
+          acc[season][batsman]={}
+          acc[season][batsman]["runs_scored"] = 0;
+          acc[season][batsman]["deliveries_faced"] = 0;
         }
+        if (!acc[season][batsman]) {
+          acc[season][batsman]={}
+          acc[season][batsman]["runs_scored"] = 0;
+          acc[season][batsman]["deliveries_faced"] = 0;
+        }
+        acc[season][batsman]["runs_scored"] += parseInt(batsman_runs);
+        acc[season][batsman]["deliveries_faced"] += 1;
       }
     }
     return acc;
@@ -38,15 +42,18 @@ const getResult = async () => {
   // console.log((runs_deliveries_by_season));
   const strike_rate_by_season = {};
   for (let season in runs_deliveries_by_season) {
-    const { runs_scored, deliveries_faced } = runs_deliveries_by_season[season];
-    const strikeRate = (runs_scored / deliveries_faced) * 100;
-    strike_rate_by_season[season] = strikeRate;
+    strike_rate_by_season[season] = {}
+    for (let batsman in runs_deliveries_by_season[season]) {
+      const { runs_scored, deliveries_faced } = runs_deliveries_by_season[season][batsman];
+      const strikeRate = (runs_scored / deliveries_faced) * 100;
+      strike_rate_by_season[season][batsman] = strikeRate;
+    }
   }
   // console.log(strike_rate_by_season);
   const data = JSON.stringify(strike_rate_by_season, null, 2);
 
   fs.writeFile(
-    "src/public/output/7-strikeRate_each_season_V_Kohli.json",
+    "src/public/output/7-strikeRate_each_season.json",
     data,
     "utf-8",
     (err) => {
